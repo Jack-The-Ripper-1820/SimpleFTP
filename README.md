@@ -1,1 +1,1 @@
-# FTPThread
+# Simple File Transfer C++
