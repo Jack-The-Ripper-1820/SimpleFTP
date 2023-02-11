@@ -1,13 +1,10 @@
 #include <iostream>
-#include <fstream>
 #include <WinSock2.h>
+#include <fstream>
 #include <sstream>
-
-using namespace std;
-
 #pragma comment(lib, "ws2_32.lib")
 
-const int BUFSIZE = 1024;
+using namespace std;
 
 int main()
 {
@@ -17,19 +14,23 @@ int main()
     dwRet = GetCurrentDirectory(MAX_PATH, Buffer);
     wcout << Buffer << endl;*/
 
-    cout << "ftpclient (Enter port number): ";
-    int PORT;
-    cin >> PORT;
-
-    cout << "Setting up server listen to port: " << PORT << endl;
-
-    WSADATA wsaData;
+    const int BUFSIZE = 1024;
+    int port;
     SOCKET sock, clientSock;
-    sockaddr_in serverAddr, clientAddr;
+    sockaddr_in serverSocketAddress, clientSocketAddress;
+    char clientMessage[512];
+    string operation, fileName;
+    WSADATA wsaData;
 
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(PORT);
-    serverAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
+    cout << "ftpserver (Enter port number): ";
+    
+    cin >> port;
+
+    cout << "Setting up server listen to port: " << port << endl;
+
+    serverSocketAddress.sin_family = AF_INET;
+    serverSocketAddress.sin_port = htons(port);
+    serverSocketAddress.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
 
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         cerr << "WSA startup failed: " << WSAGetLastError() << endl;
@@ -44,7 +45,7 @@ int main()
         return 1;
     }
 
-    if (bind(sock, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+    if (bind(sock, (sockaddr*)&serverSocketAddress, sizeof(serverSocketAddress)) == SOCKET_ERROR) {
         cerr << "bind failed: " << WSAGetLastError() << endl;
         closesocket(sock);
         WSACleanup();
@@ -61,8 +62,8 @@ int main()
     cout << "Listen successful" << endl;
     cout << "Waiting for client connection and message" << endl;
 
-    int clientAddrLen = sizeof(clientAddr);
-    clientSock = accept(sock, (sockaddr*)&clientAddr, &clientAddrLen);
+    int clientSocketAddrLen = sizeof(clientSocketAddress);
+    clientSock = accept(sock, (sockaddr*)&clientSocketAddress, &clientSocketAddrLen);
 
     if (clientSock == INVALID_SOCKET) {
         cerr << "accept failed/client socket might be invalid: " << WSAGetLastError() << endl;
@@ -71,10 +72,8 @@ int main()
         return 1;
     }
 
-    char clientMessage[512];
+    int result = recv(clientSock, clientMessage, sizeof(clientMessage), 0);
 
-    int result;
-    result = recv(clientSock, clientMessage, sizeof(clientMessage), 0);
     if (result > 0) {
         clientMessage[result] = 0;
         cout << "Received message: " << clientMessage << endl;
@@ -88,31 +87,41 @@ int main()
     }
 
     stringstream ss(clientMessage);
-    string operation, fileName;
 
     getline(ss, operation, ' ');
     getline(ss, fileName);
 
     if (operation == "upload") {
         const char* newFileName = "newUploadTestFile.pptx";
+        ofstream file(newFileName, ios::binary);
 
-        ofstream outFile(newFileName, ios::binary);
-        if (!outFile.is_open())
+        if (!file.is_open())
         {
             cerr << "Error: Could not create file " << newFileName << endl;
+            closesocket(sock);
+            WSACleanup();
             return 1;
         }
 
-        cout << "Receiving file " << fileName << "..." << endl;
+        cout << "Receiving file " << fileName  << endl;
 
-        char buf[BUFSIZE];
-        int bytesReceived;
-        while ((bytesReceived = recv(clientSock, buf, BUFSIZE, 0)) > 0)
-        {
-            outFile.write(buf, bytesReceived);
-        }
+        int bytesRec;
+        char buffer[BUFSIZE];
 
-        outFile.close();
+        do {
+            bytesRec = recv(clientSock, buffer, BUFSIZE, 0);
+            if (bytesRec > 0) {
+                file.write(buffer, bytesRec);
+            }
+            else if (bytesRec == 0) {
+                cout << "Connection closed" << endl;
+            }
+            else {
+                cerr << "recv failed: " << WSAGetLastError() << endl;
+            }
+        } while (bytesRec > 0);
+
+        file.close();
         closesocket(clientSock);
         closesocket(sock);
         WSACleanup();
@@ -122,20 +131,23 @@ int main()
 
     else if (operation == "get") {
         ifstream file(fileName, ios::binary);
+
         if (!file.is_open()) {
             cerr << "Error: Could not open file " << fileName << endl;
             return 1;
         }
-        cout << "Sending file " << fileName << "..." << endl;
+        cout << "Sending file " << fileName << endl;
 
-        char buf[BUFSIZE];
-        int bytesRead, bytesSent;
+        char buffer[BUFSIZE];
+        int bytesR, bytesS;
+
         while (!file.eof()) {
-            file.read(buf, BUFSIZE);
-            bytesRead = file.gcount();
+            file.read(buffer, BUFSIZE);
+            bytesR = file.gcount();
 
-            bytesSent = send(clientSock, buf, bytesRead, 0);
-            if (bytesSent == SOCKET_ERROR) {
+            bytesS = send(clientSock, buffer, bytesR, 0);
+
+            if (bytesS == SOCKET_ERROR) {
                 cerr << "send failed: " << WSAGetLastError() << endl;
                 file.close();
                 closesocket(clientSock);
@@ -144,8 +156,8 @@ int main()
                 return 1;
             }
 
-            if (bytesSent != bytesRead) {
-                cerr << "Error: Could not send all data." << endl;
+            if (bytesS != bytesR) {
+                cerr << "Error: partial send, could not send everything." << endl;
                 file.close();
                 closesocket(clientSock);
                 closesocket(sock);
