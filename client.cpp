@@ -6,8 +6,6 @@
 
 using namespace std;
 
-
-
 int main()
 {
     const int BUFSIZE = 1024;
