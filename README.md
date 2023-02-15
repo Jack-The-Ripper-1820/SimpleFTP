@@ -51,7 +51,7 @@ Server listens to the specified port number and after getting the request from t
 
 Client connects to the server at the specified port number, then according to the input given by the user, either sends or receives a file to or from the server.
 
-###NOTE - This program can send and receive all files which are compatible with ios::binary, specifically only pptx files.
+### NOTE - This program can send and receive all files which are compatible with ios::binary, specifically only pptx files.
 
 
 
