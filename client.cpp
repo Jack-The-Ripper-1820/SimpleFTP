@@ -2,6 +2,7 @@
 #include <WinSock2.h>
 #include <fstream>
 #include <string>
+#include <sstream>
 #pragma comment(lib, "ws2_32.lib")
 
 using namespace std;
@@ -63,6 +64,28 @@ int main()
         return 1;
     }
 
+    char serverMessage[512];
+    string id;
+    int result = recv(sock, serverMessage, sizeof(serverMessage), 0);
+
+    cout << "receiving thread id from server" << endl;
+
+    if (result > 0) {
+        serverMessage[result] = 0;
+        std::cout << "Received thread id: " << serverMessage << endl;
+    }
+
+    else {
+        cerr << "No valid message received from server" << endl;
+        closesocket(sock);
+        WSACleanup();
+        return 1;
+    }
+
+    stringstream ss(serverMessage);
+    ss >> id;
+
+
     const char* nfile = fileName.c_str();
 
     if (operation == "upload") {
@@ -102,7 +125,8 @@ int main()
     }
 
     else if (operation == "get") {
-        const char* newFileName = "newDownloadTestFile.pptx";
+        string newFileName_str = "newDownloadTestFile" + id + ".pptx";
+        const char* newFileName = (const char*) newFileName_str.c_str();
 
         ofstream file(newFileName, ios::binary);
         if (!file.is_open())
