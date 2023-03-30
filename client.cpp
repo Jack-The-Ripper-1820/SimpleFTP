@@ -27,7 +27,7 @@ int main()
     cout << "Input operation (upload/get) and filename with extension (filename.pptx)" << endl;
 
     cin >> operation;
-    
+
     getline(cin, fileName);
     fileName = fileName.substr(1);
 
@@ -55,7 +55,7 @@ int main()
         WSACleanup();
         return 1;
     }
-    
+
     if (send(sock, sendMessage.c_str(), sendMessage.length(), 0) == SOCKET_ERROR)
     {
         cerr << "send failed with error: " << WSAGetLastError() << endl;
@@ -97,8 +97,8 @@ int main()
             WSACleanup();
             return 1;
         }
-        
-        cout << "Sending file " << nfile <<  endl;
+
+        cout << "Sending file " << nfile << endl;
 
         char buffer[BUFSIZE];
         int bytesR, bytesS;
@@ -117,7 +117,7 @@ int main()
             }
         }
 
-        cout << "File sent successfully" << endl;
+        cout << "File sending process finished" << endl;
 
         file.close();
         closesocket(sock);
@@ -126,7 +126,7 @@ int main()
 
     else if (operation == "get") {
         string newFileName_str = "newDownloadTestFile" + id + ".pptx";
-        const char* newFileName = (const char*) newFileName_str.c_str();
+        const char* newFileName = (const char*)newFileName_str.c_str();
 
         ofstream file(newFileName, ios::binary);
         if (!file.is_open())
@@ -137,7 +137,7 @@ int main()
             return 1;
         }
 
-        cout << "Receiving file " << fileName  << endl;
+        cout << "Receiving file " << fileName << endl;
 
         int bytesRec;
         char buffer[BUFSIZE];
@@ -159,7 +159,7 @@ int main()
         closesocket(sock);
         WSACleanup();
 
-        cout << "File received successfully." << endl;
+        cout << "File receive process finished" << endl;
     }
 
     else {
