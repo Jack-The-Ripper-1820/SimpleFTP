@@ -68,11 +68,11 @@ int main()
     string id;
     int result = recv(sock, serverMessage, sizeof(serverMessage), 0);
 
-    cout << "receiving thread id from server" << endl;
+    cout << "receiving client id from server" << endl;
 
     if (result > 0) {
         serverMessage[result] = 0;
-        std::cout << "Received thread id: " << serverMessage << endl;
+        std::cout << "Received assigned client id: " << serverMessage << endl;
     }
 
     else {

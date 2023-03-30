@@ -8,11 +8,13 @@ Visual Studio CMake - https://learn.microsoft.com/en-us/cpp/build/cmake-projects
 
 Here we are using WinSock2 library to access socket functionality and send files between the programs.
 
-This project can transfer any pptx files between the client and the server program
+We are using standard threads library for the purpose of multithreading.
+
+This project can transfer any pptx files between clients and the server program
 
 It is recommended to run this project on Visual Studio although VS Code can also be used.
 
-Both the server and the client can send and receive files in this program.
+Both the server and the clients can send and receive files in this program.
 
 ## Functions used: 
 
@@ -42,10 +44,11 @@ The send() function sends data to a connected socket or a bound connection.
 
 The WSAGetLastError() function returns the error status for the last Windows Sockets operation that failed.
 
+The select() function determines the status of one or more sockets, waiting if necessary, to perform synchronous I/O.
 
 ## Server.cpp:
 
-Server listens to the specified port number and after getting the request from the client, parses it and either sends the file to the client or receives the file from the client.
+Server listens to the specified port number and after getting the request from the client, parses it and either sends the file to the client or receives the file from the client. It can process multiple client requests with the help of multithreading.
 
 ## Client.cpp:
 
